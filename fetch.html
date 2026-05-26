@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Fetch & Edit Employees</title>
+
+<style>
+body{font-family:sans-serif;padding:20px;background:#f5f7fb;}
+table{width:100%;border-collapse:collapse;background:white;}
+th,td{border:1px solid #ddd;padding:10px;text-align:center;}
+th{background:#4f46e5;color:white;}
+button{padding:5px 10px;margin:2px;}
+</style>
+
+</head>
+
+<body>
+
+<h2>Fetch / Edit Employees</h2>
+
+<button onclick="window.location.href='employee.html'">Back</button>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Dept</th>
+<th>Category</th>
+<th>Join</th>
+<th>Update</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+
+function render(){
+ const body=document.getElementById("tbody");
+ body.innerHTML="";
+
+ employees.forEach((e,i)=>{
+
+  body.innerHTML+=`
+  <tr>
+   <td>${e.id}</td>
+   <td><input value="${e.name}" id="n${i}"></td>
+   <td><input value="${e.department}" id="d${i}"></td>
+   <td>
+     <select id="c${i}">
+       <option ${e.category=="Skilled"?"selected":""}>Skilled</option>
+       <option ${e.category=="Semi-Skilled"?"selected":""}>Semi-Skilled</option>
+       <option ${e.category=="Unskilled"?"selected":""}>Unskilled</option>
+     </select>
+   </td>
+   <td><input type="date" value="${e.join_date||""}" id="j${i}"></td>
+   <td><button onclick="update(${i})">Update</button></td>
+  </tr>
+  `;
+ });
+
+}
+
+function update(i){
+
+ employees[i].name = document.getElementById("n"+i).value;
+ employees[i].department = document.getElementById("d"+i).value;
+ employees[i].category = document.getElementById("c"+i).value;
+ employees[i].join_date = document.getElementById("j"+i).value;
+
+ localStorage.setItem("employees",JSON.stringify(employees));
+
+ alert("Updated");
+ render();
+}
+
+render();
+
+</script>
+
+</body>
+</html>

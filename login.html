@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>HR Login</title>
+
+<style>
+body{
+ margin:0;
+ height:100vh;
+ display:flex;
+ justify-content:center;
+ align-items:center;
+ font-family:sans-serif;
+ background:linear-gradient(135deg,#2f5597,#4f46e5);
+}
+
+.box{
+ background:white;
+ padding:40px;
+ width:350px;
+ border-radius:12px;
+ box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+
+input,select{
+ width:100%;
+ padding:10px;
+ margin-top:10px;
+ border-radius:6px;
+ border:1px solid #ccc;
+}
+
+button{
+ width:100%;
+ margin-top:20px;
+ padding:10px;
+ background:#4f46e5;
+ color:white;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>HR Login</h2>
+
+<select id="role">
+ <option value="">Select Role</option>
+ <option value="ADMIN">Admin</option>
+ <option value="DEPARTMENT">Department</option>
+</select>
+
+<div id="deptBox" style="display:none;">
+<select id="dept">
+ <option value="">Select Department</option>
+</select>
+</div>
+
+<input type="password" id="pass" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+</div>
+
+<script>
+
+// ================= SHOW/HIDE =================
+const role = document.getElementById("role");
+const deptBox = document.getElementById("deptBox");
+const dept = document.getElementById("dept");
+const pass = document.getElementById("pass");
+
+role.onchange = ()=>{
+ deptBox.style.display = role.value==="DEPARTMENT" ? "block" : "none";
+};
+
+// ================= LOAD DEPARTMENTS =================
+function loadDepartments(){
+
+ const employees = JSON.parse(localStorage.getItem("employees") || "[]");
+
+ const deptSet = new Set();
+
+ employees.forEach(e=>{
+   if(e.department) deptSet.add(e.department);
+ });
+
+ dept.innerHTML = `<option value="">Select Department</option>`;
+
+ deptSet.forEach(d=>{
+   dept.innerHTML += `<option>${d}</option>`;
+ });
+}
+
+loadDepartments();
+
+// ================= LOGIN =================
+function login(){
+
+ const r = role.value;
+ const d = dept.value.trim();
+ const p = pass.value.toLowerCase();
+
+ if(!r){
+   alert("Select role");
+   return;
+ }
+
+ // ===== ADMIN LOGIN =====
+ if(r==="ADMIN"){
+
+   if(p!=="dkrm"){
+     alert("Wrong password");
+     return;
+   }
+
+   localStorage.setItem("role","ADMIN");
+   localStorage.setItem("department","");
+   location="dashboard.html";
+ }
+
+ // ===== DEPARTMENT LOGIN =====
+ if(r==="DEPARTMENT"){
+
+   if(!d){
+     alert("Select department");
+     return;
+   }
+
+   // 🔥 PASSWORD = department name (auto logic)
+   const expected = d.toLowerCase().replace("d-","");
+
+   if(p !== expected){
+     alert("Wrong password");
+     return;
+   }
+
+   localStorage.setItem("role","DEPARTMENT");
+   localStorage.setItem("department", d);
+
+   location="dashboard.html";
+ }
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Invoice</title>
+
+<style>
+
+body{
+ font-family:Arial;
+ margin:20px;
+}
+
+button{
+ padding:6px 14px;
+ margin-bottom:15px;
+}
+
+.top{
+ text-align:center;
+ line-height:1.4;
+ font-size:15px;
+}
+
+table{
+ border-collapse:collapse;
+ width:100%;
+ margin-top:20px;
+ font-size:14px;
+}
+
+th,td{
+ border:1px solid #000;
+ padding:5px;
+ text-align:center;
+}
+
+.bold{
+ font-weight:bold;
+}
+
+input{
+ padding:4px;
+ width:120px;
+}
+
+</style>
+</head>
+
+<body>
+
+<button onclick="window.print()">Print</button>
+
+<div style="margin-bottom:10px;">
+ Service Charge :
+ <input
+ type="number"
+ id="serviceInput"
+ value="0"
+ oninput="load()"
+ >
+</div>
+
+<div class="top">
+
+<div id="contract" class="bold"></div>
+
+<div>
+<span id="service"></span>
+(<span id="cat"></span>)
+- <span id="count"></span> No.s
+</div>
+
+<div>
+Contract Period
+<span id="contractPeriod"></span>
+</div>
+
+<div id="company"></div>
+
+<div class="bold">
+Payment for the period
+<span id="period"></span>
+</div>
+
+</div>
+
+<table id="tbl"></table>
+
+<script>
+
+// =====================================
+// CATEGORY CONFIG
+// =====================================
+
+const categoryConfig = {
+
+ "Skilled":{
+
+  contract:
+  "Contract No.511687761569464 Dt. 17 Oct 2025 (2GM0286/KRMD)",
+
+  company:
+  "M/s Vishal Manpower and Security Consultants, Mangalore",
+
+  service:
+  "Manpower Outstanding Services - Data Entry Operators",
+
+  period:
+  "24 Oct 2025 to 23 Oct 2027-26 days"
+ },
+
+ "Semi-Skilled":{
+
+  contract:
+  "Contract No.SEMI001",
+
+  company:
+  "M/s Vishal Manpower and Security Consultants, Mangalore",
+
+  service:
+  "Semi Skilled Services",
+
+  period:
+  "24 Oct 2025 to 23 Oct 2027"
+ },
+
+ "Unskilled":{
+
+  contract:
+  "Contract No.UN001",
+
+  company:
+  "M/s Vishal Manpower and Security Consultants, Mangalore",
+
+  service:
+  "Unskilled Services",
+
+  period:
+  "24 Oct 2025 to 23 Oct 2027"
+ }
+
+};
+
+// =====================================
+// MONTH FORMAT
+// =====================================
+
+function getPeriod(year,month){
+
+ const start =
+ new Date(year,month,1);
+
+ const end =
+ new Date(year,month+1,0);
+
+ const opt={
+  day:'2-digit',
+  month:'short',
+  year:'numeric'
+ };
+
+ return `
+ ${start.toLocaleDateString('en-GB',opt)}
+ to
+ ${end.toLocaleDateString('en-GB',opt)}
+ `;
+}
+
+// =====================================
+// LOAD
+// =====================================
+
+function load(){
+
+ const data =
+ JSON.parse(localStorage.getItem("finalData")||"{}");
+
+ const RATE =
+ Number(data.rate)||0;
+
+ const emps =
+ data.employees||[];
+
+ const category =
+ data.category || "Skilled";
+
+ const year =
+ Number(data.year);
+
+ const month =
+ Number(data.month);
+
+ const cfg =
+ categoryConfig[category];
+
+ // =====================================
+ // HEADER
+ // =====================================
+
+ document.getElementById("contract").innerText =
+ cfg.contract;
+
+ document.getElementById("service").innerText =
+ cfg.service;
+
+ document.getElementById("cat").innerText =
+ category;
+
+ document.getElementById("count").innerText =
+ emps.length;
+
+ document.getElementById("contractPeriod").innerText =
+ cfg.period;
+
+ document.getElementById("company").innerText =
+ cfg.company;
+
+ document.getElementById("period").innerText =
+ getPeriod(year,month);
+
+ // =====================================
+ // GROUPING
+ // =====================================
+
+ let group={};
+
+ let totalDays=0;
+
+ let base=0;
+
+ emps.forEach(e=>{
+
+  const d =
+  Number(e.final || 0);
+
+  if(!group[d]){
+   group[d]=0;
+  }
+
+  group[d]++;
+
+  totalDays += d;
+
+  base += d * RATE;
+ });
+
+ // =====================================
+ // ROWS
+ // =====================================
+
+ let rows="";
+
+ let i=1;
+
+ Object.keys(group)
+ .sort((a,b)=>b-a)
+ .forEach(d=>{
+
+  const people = group[d];
+
+  const total =
+  Number(d) * people;
+
+  const amount =
+  total * RATE;
+
+  rows += `
+
+  <tr>
+
+   <td>${i++}</td>
+
+   <td>${RATE}</td>
+
+   <td>${amount.toFixed(0)}</td>
+
+   <td>${people}</td>
+
+   <td>${d}</td>
+
+   <td>${total}</td>
+
+  </tr>
+
+  `;
+ });
+
+ // =====================================
+ // PF
+ // =====================================
+
+ let pfHigh=0;
+
+ let pfLow=0;
+
+ let high=0;
+
+ let low=0;
+
+ emps.forEach(e=>{
+
+  const wage =
+  Number(e.final || 0) * RATE;
+
+  if(wage > 15000){
+
+   pfHigh += 1800;
+   high++;
+
+  }else{
+
+   pfLow += wage * 0.13;
+   low++;
+  }
+ });
+
+ const pf =
+ pfHigh + pfLow;
+
+ const sub =
+ base + pf;
+
+ // =====================================
+ // SERVICE
+ // =====================================
+
+ const service =
+ Number(
+ document.getElementById("serviceInput").value || 0
+ );
+
+ // =====================================
+ // GST
+ // =====================================
+
+ const gst =
+ (sub + service) * 0.18;
+
+ const grand =
+ sub + service + gst;
+
+ // =====================================
+ // TABLE
+ // =====================================
+
+ document.getElementById("tbl").innerHTML = `
+
+ <tr>
+
+  <th>Sl No.</th>
+
+  <th>Description</th>
+
+  <th>
+   Payment per person/per month
+   Rs${RATE}/-PD
+  </th>
+
+  <th>No of people</th>
+
+  <th>
+   No of Days/Individual
+  </th>
+
+  <th>
+   Total No. of working days
+  </th>
+
+ </tr>
+
+ ${rows}
+
+ <tr>
+
+  <td colspan="3" class="bold">
+   Total No of People
+  </td>
+
+  <td class="bold">
+   ${emps.length}
+  </td>
+
+  <td class="bold">
+   Total No of Days
+  </td>
+
+  <td class="bold">
+   ${totalDays}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5" class="bold">
+   ${RATE} * ${totalDays}
+  </td>
+
+  <td>
+   ${base.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5">
+   EPF @13% for ${high} persons
+  </td>
+
+  <td>
+   ${pfHigh.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5">
+   EPF @13%for ${low} person
+  </td>
+
+  <td>
+   ${pfLow.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5" class="bold">
+   Sub Total
+  </td>
+
+  <td class="bold">
+   ${sub.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5">
+   Service Charge
+  </td>
+
+  <td>
+   ${service.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5">
+   GST @18%
+  </td>
+
+  <td>
+   ${gst.toFixed(2)}
+  </td>
+
+ </tr>
+
+ <tr>
+
+  <td colspan="5" class="bold">
+   Total Cost Per Month
+  </td>
+
+  <td class="bold">
+   ${grand.toFixed(2)}
+  </td>
+
+ </tr>
+
+ `;
+}
+
+load();
+
+</script>
+
+</body>
+</html>

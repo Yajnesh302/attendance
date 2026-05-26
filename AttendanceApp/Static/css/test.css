@@ -1,0 +1,264 @@
+﻿*, ::after, ::before {
+    box-sizing: border-box;
+    text-decoration:none !important;
+}
+
+body {
+    font-family: sans-serif;
+    font-size: .875rem;
+    opacity: 1;
+    min-width: 100vh;
+    margin: 0;
+}
+
+.align {
+            text-align:left;
+        }
+        .allin {
+        margin:auto 0 auto 0;
+        }
+        #headcontainer {
+             width:100%;
+             min-height: 100px;
+            margin:0;
+            z-index:200;
+            position:fixed;
+            background-color:white;
+        }
+        .header{
+            background-color: rgba(20, 96, 238, 0.89);
+            min-height: 100px;
+            margin:0;
+            
+            position:fixed;
+            width:100%;
+            padding-right:260PX;
+            
+            overflow:no-display;
+        }
+        .heading{
+            color: white;
+            margin: auto;
+            
+        }
+        .imgmain{
+            height: 80px;
+            margin-left: 20px;
+            margin-top: 10px;
+            background: white;
+            float: left;
+             border-radius:40px;
+
+        }
+        .imgmain2{
+            height: 80px;
+            
+            margin-top: 10px;
+           border-radius:40px;
+            float: right;
+            background: white;
+
+        }
+        .headingtext{
+            margin-top: 30px;
+        }
+
+
+
+.sidebar-item a {
+    cursor: pointer;
+    text-decoration: none;
+    font-family: sans-serif;
+}
+
+li {
+    list-style: none;
+}
+
+h4 {
+    font-family: sans-serif;
+    font-size: 1.275rem;
+    color: var(--bs-emphasis-color);
+}
+
+.wrapper {
+    align-items: stretch;
+    display: flex;
+    width: 100%;
+}
+
+#sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 200px;
+    height: 100%;
+
+    background: #212529;
+    display: flex;
+    flex-direction: column;
+    
+    transition: all 0.2s ease-in-out;
+}
+
+.h-100 {
+    overflow: auto;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #fff;
+}
+
+::-webkit-scrollbar-thumb {
+    background: gray;
+    border-radius: 10px;
+}
+
+.main {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-width: 0;
+    overflow: auto;
+    transition: all 0.2s ease-in-out;
+    position: relative;
+    width: 100%;
+    float: right;
+    margin-left: 200px;
+    
+}
+
+.sidebar-logo {
+    padding: 1.15rem;
+    width:100px;
+    height:130px;
+    
+}
+
+  
+
+.sidebar-nav {
+    flex-grow: 1;
+    list-style: none;
+    margin-bottom: 0;
+    margin-left: 0;
+    padding-left: 0;
+}
+
+.sidebar-header {
+    color: #fff;
+    font-size: 0.75rem;
+    padding:0;
+}
+
+a.sidebar-link {
+    padding: .625rem 1.625rem;
+    color: #fff !important;
+    position: relative;
+    display: block;
+    font-size: 0.875rem;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: sans-serif;
+}
+
+.sidebar-link[data-bs-toggle="collapse"]::after {
+    border: solid;
+    border-width: 0.075rem 0.075rem 0;
+    content: "";
+    display: inline-block;
+    padding: 2px;
+    position: absolute;
+    right: 1.5rem;
+    top: 1.4rem;
+    transform: rotate(-135deg);
+    transition: all 0.2s ease-out;
+}
+
+/*.sidebar-link[data-bs-toggle="collapse"].collapsed::after {
+    transform: rotate(45deg);
+    transition: all 0.2s ease-out;
+}*/
+
+.avtar {
+    height: 100px;
+    width: 75px;
+    margin: .625rem 1.625rem;
+}
+
+.navbar-expand .navbar-nav {
+    margin-left: auto;
+}
+
+.navbar {
+    position: relative;
+}
+
+/*#sidebar.collapsed {
+    margin-left: -264px;
+    transition: all 0.2s ease-in-out;
+}*/
+
+#main.m1 {
+    margin-left: 0;
+    max-width: 100%;
+    transition: all 0.2s ease-in-out;
+}
+
+#footer {
+    position: fixed;
+    bottom: 0;
+    
+      
+    width:calc(100% - 200px);
+    
+}
+
+#footer.m2 {
+    width: 100%;
+}
+
+.theme-toggle {
+    
+    border: none;
+    background: var(--s-body-color);
+    
+}
+
+.theme-toggle {
+    margin-right: 20px;
+}
+
+
+
+           *, ::after, ::before {
+    box-sizing: border-box;
+    text-decoration:none !important;
+    margin:0;
+    padding:0;
+}
+      a.sidebar-link {
+    padding: .625rem 1.625rem;
+    color: #fff !important;
+    position: relative;
+    display: block;
+    font-size: 0.875rem;
+    cursor: pointer;
+    text-decoration: none;
+    font-family: sans-serif;
+}
+      .imgmain,.imgmain2 {
+           border-radius: 40px;
+      }
+      .sidebar-item:hover {
+
+background-color:white;
+
+}
+      a.sidebar-link:hover {
+      color:black !important;
+      }

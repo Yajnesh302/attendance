@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Delete Employees</title>
+
+<style>
+body{font-family:sans-serif;padding:20px;background:#f5f7fb;}
+table{width:100%;border-collapse:collapse;background:white;}
+th,td{border:1px solid #ddd;padding:10px;text-align:center;}
+th{background:#e74c3c;color:white;}
+button{padding:6px 10px;margin:5px;}
+</style>
+
+</head>
+
+<body>
+
+<h2>Delete Employees</h2>
+
+<button onclick="window.location.href='employee.html'">Back</button>
+
+<br><br>
+
+<!-- CATEGORY DELETE -->
+
+<select id="cat">
+<option value="">Delete by Category</option>
+<option>Skilled</option>
+<option>Semi-Skilled</option>
+<option>Unskilled</option>
+</select>
+
+<button onclick="deleteCategory()">Delete Category</button>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Dept</th>
+<th>Category</th>
+<th>Delete</th>
+</tr>
+</thead>
+
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+
+function render(){
+ const body=document.getElementById("tbody");
+ body.innerHTML="";
+
+ employees.forEach((e,i)=>{
+
+  body.innerHTML+=`
+  <tr>
+   <td>${e.id}</td>
+   <td>${e.name}</td>
+   <td>${e.department}</td>
+   <td>${e.category}</td>
+   <td><button onclick="del(${i})">Delete</button></td>
+  </tr>
+  `;
+ });
+
+}
+
+function del(i){
+
+ if(!confirm("Delete this employee?")) return;
+
+ employees.splice(i,1);
+ localStorage.setItem("employees",JSON.stringify(employees));
+
+ render();
+}
+
+function deleteCategory(){
+
+ const cat=document.getElementById("cat").value;
+ if(!cat){ alert("Select category"); return; }
+
+ if(!confirm("Delete all "+cat+" employees?")) return;
+
+ employees = employees.filter(e=>e.category!==cat);
+
+ localStorage.setItem("employees",JSON.stringify(employees));
+
+ render();
+}
+
+render();
+
+</script>
+
+</body>
+</html>

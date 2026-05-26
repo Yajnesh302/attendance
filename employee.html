@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Employee Master</title>
+
+<style>
+body{
+ margin:0;
+ font-family:Segoe UI, sans-serif;
+ background:#f5f7fb;
+}
+
+/* HEADER */
+.header{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ padding:20px;
+}
+
+button{
+ padding:8px 14px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.primary{background:#4f46e5;color:white;}
+.success{background:#22c55e;color:white;}
+.danger{background:#ef4444;color:white;}
+
+/* LAYOUT */
+.container{
+ padding:0 20px 20px;
+}
+
+.grid{
+ display:grid;
+ grid-template-columns:280px 1fr;
+ gap:20px;
+ align-items:start;
+}
+
+/* PANEL */
+.panel{
+ background:white;
+ padding:15px;
+ border-radius:10px;
+ box-shadow:0 2px 8px rgba(0,0,0,0.05);
+ margin-bottom:15px;
+}
+
+.panel h3{
+ margin-top:0;
+}
+
+/* INPUT */
+input,select{
+ width:100%;
+ padding:10px;
+ margin-top:10px;
+ border-radius:6px;
+ border:1px solid #ccc;
+ font-size:14px;
+}
+
+/* TABLE */
+table{
+ width:100%;
+ border-collapse:collapse;
+ background:white;
+ border-radius:10px;
+ overflow:hidden;
+}
+
+th{
+ background:#4f46e5;
+ color:white;
+ padding:10px;
+}
+
+td{
+ padding:10px;
+ text-align:center;
+}
+
+tr:nth-child(even){
+ background:#f9fafb;
+}
+
+/* 🔴 DARK RED ROW */
+.resigned-row{
+ background:#7f1d1d !important;
+ color:#fff;
+ font-weight:600;
+}
+
+/* ✂️ STRIKE NAME */
+.strike{
+ text-decoration:line-through;
+}
+
+/* SMALL TEXT */
+.note{
+ font-size:12px;
+ color:#555;
+ margin-top:8px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+ <h2>Employee Master</h2>
+ <button class="primary" onclick="goDash()">Back to Dashboard</button>
+</div>
+
+<div class="container">
+
+<div style="margin-bottom:10px;">
+ <button class="primary" onclick="goFetch()">Fetch / Edit</button>
+ <button class="danger" onclick="goDelete()">Delete</button>
+</div>
+
+<div class="grid">
+
+<!-- LEFT -->
+
+<div>
+
+<div class="panel">
+<h3>Manual Entry</h3>
+
+<input id="id" placeholder="Employee ID">
+<input id="name" placeholder="Employee Name">
+
+<select id="dept">
+ <option>D-KRM</option>
+ <option>D-AE</option>
+ <option>D-RAM</option>
+ <option>D-ADMIN</option>
+ <option>SECURITY</option>
+</select>
+
+<select id="cat">
+ <option>Skilled</option>
+ <option>Semi-Skilled</option>
+ <option>Unskilled</option>
+</select>
+
+<input type="date" id="join">
+<input id="leave" placeholder="Leave Balance">
+
+<button class="success" onclick="addEmp()">Add Employee</button>
+
+</div>
+
+<div class="panel">
+<h3>Import CSV</h3>
+
+<select id="importCat">
+ <option>Skilled</option>
+ <option>Semi-Skilled</option>
+ <option>Unskilled</option>
+</select>
+
+<input type="file" id="file" accept=".csv" onchange="importCSV(event)">
+
+<div class="note">
+Format:<br>
+id,name,department,join_date,leave_balance
+</div>
+
+</div>
+
+</div>
+
+<!-- RIGHT -->
+
+<div>
+
+<div class="panel">
+<h3>Filter by Category</h3>
+
+<select id="filter" onchange="render()">
+ <option>All</option>
+ <option>Skilled</option>
+ <option>Semi-Skilled</option>
+ <option>Unskilled</option>
+</select>
+</div>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th style="text-align:left;padding-left:15px;">Name</th>
+<th>Department</th>
+<th>Category</th>
+<th>Join Date</th>
+<th>Leave</th>
+<th>Status</th>
+</tr>
+</thead>
+
+<tbody id="body"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+<script>
+
+// ===============================
+if(localStorage.getItem("role")!=="ADMIN"){
+ document.body.innerHTML="<h2 style='color:red;text-align:center;margin-top:50px;'>Only Admin Can Access</h2>";
+}
+
+// ===============================
+let employees = JSON.parse(localStorage.getItem("employees")) || [];
+
+function save(){
+ localStorage.setItem("employees",JSON.stringify(employees));
+}
+
+// ===============================
+function addEmp(){
+
+ if(!id.value || !name.value){
+  alert("ID & Name required");
+  return;
+ }
+
+ if(employees.some(e => e.id === id.value && e.category === cat.value)){
+  alert("Employee already exists in this category");
+  return;
+ }
+
+ employees.push({
+  id:id.value,
+  name:name.value,
+  department:dept.value,
+  category:cat.value,
+  join_date:join.value,
+  leave_balance:Number(leave.value)||0,
+  status:"Active",
+  resign_date:""
+ });
+
+ save();
+ render();
+
+ id.value=name.value=leave.value="";
+}
+
+// ===============================
+function importCSV(ev){
+
+ const file=ev.target.files[0];
+ if(!file)return;
+
+ const selectedCategory = importCat.value;
+
+ const reader=new FileReader();
+
+ reader.onload=()=>{
+
+  const lines=reader.result.split("\n");
+  lines.shift();
+
+  lines.forEach(l=>{
+
+   if(!l.trim()) return;
+
+   const v=l.split(",").map(x=>x.trim());
+
+   if(!v[0] || !v[1]) return;
+
+   if(employees.some(e=>e.id===v[0] && e.category===selectedCategory)) return;
+
+   employees.push({
+    id:v[0],
+    name:v[1],
+    department:v[2] || "GENERAL",
+    category:selectedCategory,
+    join_date:v[3] || "",
+    leave_balance:Number(v[4])||0,
+    status:"Active",
+    resign_date:""
+   });
+
+  });
+
+  save();
+  render();
+ };
+
+ reader.readAsText(file);
+}
+
+// ===============================
+function changeStatus(i,val){
+
+ if(val === "Resigned"){
+
+  let date = prompt("Enter Resigned Date (YYYY-MM-DD)");
+
+  if(!date){
+   alert("Resign date required");
+   return;
+  }
+
+  employees[i].status = "Resigned";
+  employees[i].resign_date = date;
+
+ }else{
+  employees[i].status = "Active";
+  employees[i].resign_date = "";
+ }
+
+ save();
+ render();
+}
+
+// ===============================
+function render(){
+
+ const f=filter.value;
+ body.innerHTML="";
+
+ employees
+ .filter(e=>f==="All"||e.category===f)
+ .forEach((e,i)=>{
+
+  body.innerHTML+=`
+  <tr class="${e.status==='Resigned' ? 'resigned-row' : ''}">
+   <td>${e.id}</td>
+   <td style="text-align:left;padding-left:15px;" class="${e.status==='Resigned' ? 'strike' : ''}">
+     ${e.name}
+   </td>
+   <td>${e.department}</td>
+   <td>${e.category}</td>
+   <td>${format(e.join_date)}</td>
+   <td>${e.leave_balance ?? 0}</td>
+   <td>
+    <select onchange="changeStatus(${i},this.value)">
+     <option ${e.status=="Active"?"selected":""}>Active</option>
+     <option ${e.status=="Resigned"?"selected":""}>Resigned</option>
+    </select>
+   </td>
+  </tr>
+  `;
+ });
+
+}
+
+// ===============================
+function format(d){
+ if(!d) return "";
+ const date = new Date(d);
+ return isNaN(date) ? d : date.toLocaleDateString("en-GB");
+}
+
+// ===============================
+function goDash(){location="dashboard.html";}
+function goFetch(){location="fetch.html";}
+function goDelete(){location="delete.html";}
+
+// ===============================
+render();
+
+</script>
+
+</body>
+</html>

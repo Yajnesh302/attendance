@@ -1,0 +1,191 @@
+<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site.master.cs" Inherits="AttendanceApp.SiteMaster" %>
+
+<!DOCTYPE html>
+<html lang="en">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title><asp:ContentPlaceHolder ID="TitleContent" runat="server"></asp:ContentPlaceHolder> - Attendance System</title>
+    
+    <!-- Custom fonts for this template-->
+    <link href="Static/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css" />
+    <!-- Custom styles for this template-->
+    <link href="Static/css/sb-admin-2.min.css" rel="stylesheet" />
+
+    <style>
+        body { color: #111 !important; }
+        .navbar-custom {
+            background-color: #4f46e5;
+            background-image: linear-gradient(180deg,#4f46e5 10%,#3730a3 100%);
+            padding: 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: 60px;
+        }
+        .navbar-custom .navbar-brand {
+            color: white;
+            font-weight: bold;
+            padding: 15px 20px;
+            font-size: 1.25rem;
+        }
+        .btn-logout {
+            background-color: #e74a3b;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            font-weight: bold;
+        }
+        .btn-logout:hover {
+            background-color: #c0392b;
+            color: white;
+        }
+        .container-main {
+            padding: 20px;
+            background-color: #f8f9fc;
+            min-height: calc(100vh - 60px);
+        }
+        .app-sidebar {
+            width: 240px;
+            background: linear-gradient(180deg, #1a237e 0%, #283593 60%, #1565c0 100%);
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 2px 0 8px rgba(0,0,0,0.2);
+            min-height: 100vh;
+        }
+        .sidebar-profile {
+            padding: 20px 16px 16px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+        }
+        .sidebar-avatar {
+            width: 140px;
+            height: 180px;
+            border-radius: 6px;
+            border: 3px solid rgba(255,255,255,0.45);
+            object-fit: cover;
+            margin-bottom: 12px;
+        }
+        .sidebar-name {
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+        .sidebar-role-badge {
+            display: inline-block;
+            margin-top: 10px;
+            background: rgba(255,255,255,0.15);
+            color: #a5d6a7;
+            font-size: 0.72rem;
+            font-weight: 700;
+            padding: 3px 12px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        .header-nav-links .nav-link {
+            padding: 6px 12px !important;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            transition: background-color 0.2s, color 0.2s;
+            opacity: 0.85;
+        }
+        .header-nav-links .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: #fff !important;
+            opacity: 1;
+        }
+    </style>
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server"></asp:ContentPlaceHolder>
+</head>
+<body id="page-top">
+    <form id="form1" runat="server">
+        <div id="wrapper" class="d-flex">
+            <!-- Sidebar -->
+            <asp:PlaceHolder ID="phSidebar" runat="server">
+                <div class="app-sidebar bg-gradient-primary sidebar-dark">
+                    <!-- Profile block -->
+                    <div class="sidebar-profile">
+                        <img src="http://windflower.lrde.com/empphotos/Dsc_<%=Session["PCNO"]%>.jpg"
+                              id="imgavtr" class="sidebar-avatar" alt="Avatar"
+                              onerror="this.onerror=null; this.src='Static/Images/default_avatar.png';" />
+                        <div class="sidebar-name">
+                            <%=Session["Name"] != null ? Session["Name"].ToString() : "User" %>
+                        </div>
+                        <span class="sidebar-role-badge">
+                            <i id="myfw" runat="server" class="fas fa-user"></i>&nbsp;<label runat="server" id="lblUserName"></label>
+                        </span>
+                    </div>
+                </div>
+            </asp:PlaceHolder>
+
+            <!-- Content Wrapper -->
+            <div id="content-wrapper" class="d-flex flex-column flex-grow-1">
+                <!-- Main Content -->
+                <div id="content">
+                    <!-- Topbar -->
+                    <nav class="navbar navbar-expand navbar-light topbar static-top navbar-custom">
+                        <span class="navbar-brand text-white ml-3 font-weight-bold">
+                            <i class="fas fa-building mr-2"></i> HR System
+                        </span>
+
+                        <!-- Top Navigation Links (visible only on non-dashboard pages) -->
+                        <asp:PlaceHolder ID="phTopNav" runat="server">
+                            <ul class="navbar-nav mr-auto ml-4 align-items-center header-nav-links">
+                                <li class="nav-item">
+                                    <a class="nav-link text-white font-weight-bold" href="Dashboard.aspx"><i class="fas fa-tachometer-alt mr-1"></i> Dashboard</a>
+                                </li>
+                                <li class="nav-item ml-3">
+                                    <a class="nav-link text-white font-weight-bold" href="Employee.aspx"><i class="fas fa-users mr-1"></i> Employee Master</a>
+                                </li>
+                                <li class="nav-item ml-3">
+                                    <a class="nav-link text-white font-weight-bold" href="Attendance.aspx"><i class="fas fa-calendar-check mr-1"></i> Attendance</a>
+                                </li>
+                                <li class="nav-item ml-3">
+                                    <a class="nav-link text-white font-weight-bold" href="Ledger.aspx"><i class="fas fa-book mr-1"></i> Ledger</a>
+                                </li>
+                                <li class="nav-item ml-3">
+                                    <a class="nav-link text-white font-weight-bold" href="Calculation.aspx"><i class="fas fa-calculator mr-1"></i> Calculation</a>
+                                </li>
+                                <% if (Session["Role"] != null && Convert.ToInt32(Session["Role"]) == 1) { %>
+                                <li class="nav-item ml-3">
+                                    <a class="nav-link text-white font-weight-bold" href="AdminManagement.aspx"><i class="fas fa-user-shield mr-1"></i> Admin Management</a>
+                                </li>
+                                <% } %>
+                            </ul>
+                        </asp:PlaceHolder>
+
+                        <!-- Topbar User Information -->
+                        <ul class="navbar-nav ml-auto align-items-center">
+                            <li class="nav-item mr-3">
+                                <span class="text-white font-weight-bold">Welcome, <%=Session["Name"] %></span>
+                            </li>
+                            <li class="nav-item">
+                                <asp:Button ID="btnLogout" runat="server" Text="Logout" CssClass="btn-logout" OnClick="btnLogout_Click" CausesValidation="false" style="border-radius: 6px; font-weight: bold; margin-right: 15px;" />
+                            </li>
+                        </ul>
+                    </nav>
+                    <!-- End of Topbar -->
+
+                    <!-- Begin Page Content -->
+                    <div class="container-main">
+                        <asp:ContentPlaceHolder ID="MainContent" runat="server"></asp:ContentPlaceHolder>
+                    </div>
+                </div>
+                <!-- End of Main Content -->
+            </div>
+        </div>
+
+        <!-- Bootstrap core JavaScript-->
+        <script src="Static/jquery/jquery.min.js"></script>
+        <script src="Static/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <!-- Core plugin JavaScript-->
+        <script src="Static/jquery-easing/jquery.easing.min.js"></script>
+        <!-- Custom scripts for all pages-->
+        <script src="Static/js/sb-admin-2.min.js"></script>
+    </form>
+</body>
+</html>

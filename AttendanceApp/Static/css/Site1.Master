@@ -1,0 +1,132 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site1.master.cs" Inherits="test10._2.Site1" %>
+
+<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head runat="server">
+    <title>ISM</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="bootstrap5.3.2/css/bootstrap.min.css" />
+    <%--  <script src="style/jquery-3.6.0.min.js"></script>--%>
+    <link href="fontawesome-free-6.4.0-web/css/all.css" rel="stylesheet" />
+    <link rel="stylesheet" href="CSS/SiteMaster1.css" />
+    <script src="jquery-ui-1.13.2.custom/external/jquery/jquery.js"></script>
+    <script src="jquery-ui-1.13.2.custom/jquery-ui.min.js"></script>
+    
+
+    
+    <asp:ContentPlaceHolder ID="HeadContent" runat="server">
+    </asp:ContentPlaceHolder>
+
+    <style>
+   
+  </style>
+
+</head>
+<body>
+    <form id="form1" runat="server">
+        <div class="wrapper mt-0 pt-0">
+            <!--====Sidebar====-->
+            <aside id="sidebar" class="js-sidebar">
+                <div class="h-100">
+                    <div class="sidebar-logo">
+                        <a>
+                            <img class="avtar" clientidmode="Static" id="imgavtr" runat="server" src="" style="margin: .625rem 1.625rem;" alt="" /></a>
+                    </div>
+                    <!--====Navigation Links For Sidebar====-->
+                    <ul class="sidebar-nav">
+                        <li class="sidebar-item" style="background-color: #212529">
+                            <asp:Label ID="Label1" ClientIDMode="Static" Style="color: #fff; font-size: 0.75rem; padding: 1rem;" runat="server" Text=""></asp:Label>
+                        </li>
+
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="dashboard" class="sidebar-link " OnClick="LinkButton1_Click" runat="server"><i class="fas fa-tachometer-alt" ></i> Dashboard</asp:LinkButton>
+
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="create" class="sidebar-link " OnClick="create_Click" runat="server"><i class="fas fa-plus-circle" ></i> Create ISM</asp:LinkButton>
+
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="drafts" class="sidebar-link " OnClick="drafts_Click" runat="server"><i class="fas fa-file-alt" ></i> Drafts</asp:LinkButton>
+
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="received" OnClick="received_Click" class="sidebar-link " runat="server"><i class="fas fa-inbox" ></i> ISM Received</asp:LinkButton>
+
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="sent" OnClick="sent_Click" class="sidebar-link " runat="server"><i class="fas fa-paper-plane" ></i> Sent ISMs</asp:LinkButton>
+
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="RecSearch" OnClick="RecSearch_Click" class="sidebar-link " runat="server"><i class="fas fa-search" ></i> Received Search</asp:LinkButton>
+                        </li>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="SentSearch" OnClick="SentSearch_Click" class="sidebar-link " runat="server"><i class="fas fa-search" ></i> Sent Search</asp:LinkButton>
+                        </li>
+
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="reminder" OnClick="reminder_Click" class="sidebar-link " runat="server"><i class="fas fa-bell" ></i> ISM Alerts</asp:LinkButton>
+
+                        </li>
+
+                        <li class="sidebar-item">
+                            <a id="A6" href="SelectDivison.aspx" runat="server" class="sidebar-link">Change Directorate</a>
+                        </li>
+                        <%--   <li class="sidebar-item">
+                         <asp:LinkButton ID="LogSessions" OnClick="LogSessions_Click" class="sidebar-link " runat="server">Login Sessions</asp:LinkButton>
+                       
+                    </li>--%>
+                        <li class="sidebar-item">
+                            <asp:LinkButton ID="logout" OnClick="logout_Click" class="sidebar-link " runat="server"><i class="fas fa-sign-out-alt" ></i> <asp:Label ID="Outlog" runat="server"></asp:Label></asp:LinkButton>
+                            
+                        </li>
+
+
+                    </ul>
+
+                    <div runat="server" id="admincontrol">
+                        <ul class="sidebar-nav">
+                            <br />
+                            <li class="sidebar-header">Admin Pannel</li>
+
+                            <li class="sidebar-item">
+                                <a id="A8" href="UserList.aspx" runat="server" class="sidebar-link">User List</a>
+                            </li>
+                            <li class="sidebar-item">
+                                <a href="UserManagement.aspx" class="sidebar-link">User Management</a>
+                            </li>
+
+
+
+                        </ul>
+                    </div>
+
+
+                </div>
+            </aside>
+            <div class="main " id="main">
+                <div style="background-color: white;top:0" id="headcontainer">
+                    <div class="header">
+                        <p>
+                            <img src="newlrdelogo.png" class="imgmain" alt="" /><img src="newlrdelogo.png" class="imgmain2" alt="" /><h2 class="heading" style="text-align: center;"><span class="headingtext">Inter Section Memo(ISM)</span></h2>
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <main id="mainforprint" style="margin-top: 80px; width: 100%; height: 90%; margin-bottom: 0px; background-color: #ecf0f3;" class="content px-3 py-2 m1">
+                    <asp:ContentPlaceHolder ID="MainContent" runat="server">
+                    </asp:ContentPlaceHolder>
+                </main>
+            </div>
+        </div>
+    </form>
+    
+
+</body>
+
+</html>

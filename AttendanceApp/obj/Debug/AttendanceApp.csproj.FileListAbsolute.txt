@@ -1,0 +1,17 @@
+E:\attendence\AttendanceApp\bin\AttendanceApp.dll.config
+E:\attendence\AttendanceApp\bin\AttendanceApp.dll
+E:\attendence\AttendanceApp\bin\AttendanceApp.pdb
+E:\attendence\AttendanceApp\obj\Debug\AttendanceApp.dll
+E:\attendence\AttendanceApp\obj\Debug\AttendanceApp.pdb
+E:\attendence\AttendanceApp\bin\MySqlConnector.dll
+E:\attendence\AttendanceApp\bin\System.Buffers.dll
+E:\attendence\AttendanceApp\bin\System.Memory.dll
+E:\attendence\AttendanceApp\bin\System.Numerics.Vectors.dll
+E:\attendence\AttendanceApp\bin\System.Runtime.CompilerServices.Unsafe.dll
+E:\attendence\AttendanceApp\bin\System.Threading.Tasks.Extensions.dll
+E:\attendence\AttendanceApp\bin\MySqlConnector.xml
+E:\attendence\AttendanceApp\bin\System.Buffers.xml
+E:\attendence\AttendanceApp\bin\System.Memory.xml
+E:\attendence\AttendanceApp\bin\System.Numerics.Vectors.xml
+E:\attendence\AttendanceApp\bin\System.Runtime.CompilerServices.Unsafe.xml
+E:\attendence\AttendanceApp\bin\System.Threading.Tasks.Extensions.xml

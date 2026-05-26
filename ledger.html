@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Leave Ledger</title>
+
+<script src="xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Segoe UI;background:#f5f7fb;padding:20px;}
+
+.controls{
+ background:white;
+ padding:15px;
+ border-radius:10px;
+ margin-bottom:20px;
+ display:flex;
+ gap:10px;
+ flex-wrap:wrap;
+}
+
+select,input{
+ padding:8px;
+ border-radius:6px;
+ border:1px solid #ccc;
+}
+
+button{
+ padding:8px 15px;
+ background:#4f46e5;
+ color:white;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+table{
+ width:100%;
+ border-collapse:collapse;
+ background:white;
+}
+
+th{
+ background:#4f46e5;
+ color:white;
+ padding:10px;
+ text-align:left;
+}
+
+td{
+ padding:10px;
+ border-bottom:1px solid #eee;
+ text-align:center;
+}
+
+.emp-name{
+ text-align:left;
+ font-weight:600;
+}
+
+.closing{
+ background:#eef2ff;
+ font-weight:700;
+}
+</style>
+</head>
+
+<body>
+
+<h2>📘 Leave Ledger</h2>
+
+<div class="controls">
+<select id="year"></select>
+<select id="month"></select>
+
+<select id="category">
+<option value="All">All</option>
+<option>Skilled</option>
+<option>Semi-Skilled</option>
+<option>Unskilled</option>
+</select>
+
+<input id="search" placeholder="Search name / ID">
+
+<button onclick="renderLedger()">Generate</button>
+<button onclick="exportExcel()">Export</button>
+<button onclick="exportSummaryExcel()">Export Summary Excel</button>
+</div>
+
+<table id="ledgerTable">
+<thead>
+<tr>
+<th>ID</th>
+<th>Name</th>
+<th>Dept</th>
+<th>Category</th>
+<th>Opening</th>
+<th>Paid (-)</th>
+<th>Half</th>
+<th>Unpaid</th>
+<th>Sat Cut</th>
+<th>Closing</th>
+</tr>
+</thead>
+
+<tbody id="body"></tbody>
+</table>
+
+<script>
+
+// ================= DATA =================
+let employees = JSON.parse(localStorage.getItem("employees") || "[]");
+let attendance = JSON.parse(localStorage.getItem("attendance") || "{}");
+
+const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// ================= INIT =================
+for(let y=2024;y<=2027;y++){
+ document.getElementById("year").innerHTML += `<option>${y}</option>`;
+}
+document.getElementById("year").value = new Date().getFullYear();
+
+months.forEach((m,i)=>{
+ document.getElementById("month").innerHTML += `<option value="${i}">${m}</option>`;
+});
+document.getElementById("month").value = new Date().getMonth();
+
+// ================= ATTENDANCE =================
+function getMonthlyStats(emp,y,m){
+
+ let key = `${y}-${m}-${emp.category}`;
+ let data = attendance[key]?.[emp.id];
+
+ let stats = {paid:0,unpaid:0,sat:0,half:0};
+
+ if(!data) return stats;
+
+ Object.keys(data).forEach(d=>{
+
+  let val = data[d];
+
+  if(val.leave==="Paid"){
+   if(val.val===0.5) stats.half += 0.5;
+   else stats.paid++;
+  }
+  else if(val.leave==="Unpaid"){
+   stats.unpaid++;
+  }
+
+  let date = new Date(y,m,d);
+  if(date.getDay()===6 && val.val===0){
+   stats.sat++;
+  }
+
+ });
+
+ return stats;
+}
+
+// ================= LEDGER =================
+function processLedger(emp,targetM,targetY){
+
+ let joinDate = new Date(emp.join_date);
+ let resignDate = emp.resign_date ? new Date(emp.resign_date) : null;
+
+ let currentBal = Number(emp.leave_balance) || 0;
+ let halfReserve = 0;
+
+ let opening = currentBal;
+
+ for(let y=joinDate.getFullYear(); y<=targetY; y++){
+
+  for(let m=0; m<12; m++){
+
+   if(y===joinDate.getFullYear() && m<joinDate.getMonth()) continue;
+
+   if(resignDate){
+    if(y>resignDate.getFullYear()) break;
+    if(y===resignDate.getFullYear() && m>resignDate.getMonth()) break;
+   }
+
+   if(y===targetY && m>targetM) break;
+
+   let stats = getMonthlyStats(emp,y,m);
+
+   opening = currentBal;
+
+   // HALF DAY
+   halfReserve += stats.half;
+   let pairs = Math.floor(halfReserve);
+   halfReserve -= pairs;
+
+   // DEDUCTION ONLY
+   let deduction = stats.paid + pairs;
+
+   let closing = opening - deduction;
+
+   currentBal = closing;
+
+   if(y===targetY && m===targetM){
+    return {
+     opening,
+     paid:stats.paid,
+     unpaid:stats.unpaid,
+     sat:stats.sat,
+     half:stats.half,
+     closing
+    };
+   }
+
+  }
+ }
+
+ return {
+  opening:currentBal,
+  paid:0,
+  unpaid:0,
+  sat:0,
+  half:0,
+  closing:currentBal
+ };
+}
+
+// ================= RENDER =================
+function renderLedger(){
+
+ let y = +year.value;
+ let m = +month.value;
+ let cat = category.value.toLowerCase();
+ let searchVal = search.value.toLowerCase();
+
+ body.innerHTML = "";
+
+ employees.forEach(emp=>{
+
+  if(cat!=="all" && emp.category.toLowerCase()!==cat) return;
+
+  if(searchVal && !emp.name.toLowerCase().includes(searchVal) && !emp.id.toString().includes(searchVal)) return;
+
+  let res = processLedger(emp,m,y);
+
+  body.innerHTML += `
+  <tr>
+   <td>${emp.id}</td>
+   <td class="emp-name">${emp.name}</td>
+   <td>${emp.department || '-'}</td>
+   <td>${emp.category}</td>
+   <td>${res.opening.toFixed(1)}</td>
+   <td style="color:red">-${res.paid}</td>
+   <td>${res.half || '-'}</td>
+   <td>${res.unpaid}</td>
+   <td>${res.sat}</td>
+   <td class="closing">${res.closing.toFixed(1)}</td>
+  </tr>`;
+ });
+
+}
+
+// ================= EXPORT =================
+
+function exportExcel(){
+
+ if(typeof XLSX === "undefined"){
+  alert("XLSX library not loaded");
+  return;
+ }
+
+ let table = document.getElementById("ledgerTable");
+
+ const wb = XLSX.utils.table_to_book(table, {sheet:"Ledger"});
+
+ XLSX.writeFile(wb, "Leave_Ledger.xlsx", {
+  bookType: "xlsx",
+  type: "binary"
+ });
+}
+
+function exportSummaryExcel(){
+
+ if(typeof XLSX === "undefined"){
+  alert("XLSX library not loaded");
+  return;
+ }
+
+ let y = +year.value;
+ let m = +month.value;
+ let cat = category.value.toLowerCase();
+ let searchVal = search.value.toLowerCase();
+
+ let data = [];
+
+ employees.forEach(emp=>{
+
+  if(cat!=="all" && emp.category.toLowerCase()!==cat) return;
+
+  if(searchVal && !emp.name.toLowerCase().includes(searchVal) && !emp.id.toString().includes(searchVal)) return;
+
+  let stats = getMonthlyStats(emp, y, m);
+
+  data.push({
+    Name: emp.name,
+    Department: emp.department || '-',
+    Paid: stats.paid,
+    Unpaid: stats.unpaid,
+    "Sat Cut": stats.sat
+  });
+
+ });
+
+ const ws = XLSX.utils.json_to_sheet(data);
+ const wb = XLSX.utils.book_new();
+
+ XLSX.utils.book_append_sheet(wb, ws, "Summary");
+
+ XLSX.writeFile(wb, `Summary_${months[m]}.xlsx`, {
+  bookType: "xlsx",
+  type: "binary"
+ });
+}
+renderLedger();
+
+</script>
+
+</body>
+</html>

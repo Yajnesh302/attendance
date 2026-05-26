@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Professional Attendance System</title>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+<style>
+
+body{
+    font-family:Arial;
+    background:#f5f6fa;
+    margin:0;
+    padding:10px;
+    height:100vh;
+    overflow:hidden;
+}
+
+.header{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.controls{
+    margin:10px 0;
+    background:#fff;
+    padding:10px;
+    border-radius:8px;
+    box-shadow:0 2px 5px rgba(0,0,0,0.05);
+    display:flex;
+    gap:5px;
+    align-items:center;
+    flex-wrap:wrap;
+}
+
+.controls select,
+.controls input,
+.controls button{
+    padding:5px;
+    font-size:12px;
+}
+
+.wrapper{
+    height:72vh;
+    overflow:auto;
+    border:1px solid #ccc;
+    background:white;
+}
+
+table{
+    border-collapse:collapse;
+    width:max-content;
+    min-width:100%;
+}
+
+th,td{
+    border:1px solid #ddd;
+    padding:4px;
+    text-align:center;
+    font-size:12px;
+    min-width:35px;
+}
+
+th{
+    position:sticky;
+    top:0;
+    background:#f0f2f5;
+    z-index:10;
+}
+
+.green{
+    background:#d9f7be !important;
+}
+
+.red{
+    background:#ffa39e !important;
+}
+
+.royal-blue{
+    background:#4169E1 !important;
+    color:white !important;
+}
+
+.light-yellow{
+    background:#fff9c4 !important;
+}
+
+.gray{
+    background:#e5e7eb !important;
+    color:#666;
+}
+
+.selected-row{
+    background:#add8e6 !important;
+}
+
+input.att{
+    width:28px;
+    text-align:center;
+    border:1px solid #999;
+    font-weight:bold;
+    background:transparent;
+    outline:none;
+}
+
+.label-text{
+    display:block;
+    font-size:9px;
+    font-weight:bold;
+    color:#333;
+    margin-top:1px;
+}
+
+select.leave-opt{
+    font-size:9px;
+    display:block;
+    width:100%;
+}
+
+#ledger-pop{
+    position:fixed;
+    bottom:20px;
+    right:20px;
+    background:#111827;
+    color:white;
+    padding:12px 18px;
+    border-radius:8px;
+    display:none;
+    z-index:9999;
+    font-size:13px;
+    box-shadow:0 4px 10px rgba(0,0,0,0.3);
+}
+
+</style>
+</head>
+
+<body onclick="if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{})">
+
+<div id="ledger-pop"></div>
+
+<div class="header">
+
+<h2>Attendance Management</h2>
+
+<button
+onclick="location='dashboard.html'"
+style="background:#4f46e5;color:white;border:none;padding:5px 10px;border-radius:4px;cursor:pointer">
+Back
+</button>
+
+</div>
+
+<div class="controls">
+
+Year:
+<select id="yearSel"></select>
+
+Month:
+<select id="monthSel"></select>
+
+Cat:
+<select id="catSel">
+<option>Skilled</option>
+<option>Semi-Skilled</option>
+<option>Unskilled</option>
+</select>
+
+Search:
+<input id="search"
+oninput="render()"
+placeholder="ID/Name"
+style="width:100px">
+
+Holiday:
+<input id="holidayInput"
+style="width:60px"
+placeholder="14,26">
+
+<button onclick="applyHoliday()"
+style="background:#4169E1;color:white">
+Apply
+</button>
+
+<button onclick="removeHoliday()"
+style="background:red;color:white">
+Remove
+</button>
+
+<button onclick="save()"
+style="background:#28a745;color:white">
+Save
+</button>
+
+<button onclick="globalAdjust()"
+style="background:#9333ea;color:white">
+Global Adjust
+</button>
+
+<button onclick="downloadExcel()"
+style="background:#1d6f42;color:white">
+Excel Download
+</button>
+
+</div>
+
+<div class="wrapper">
+
+<table id="attTable">
+
+<thead id="thead"></thead>
+
+<tbody id="tbody"></tbody>
+
+</table>
+
+</div>
+
+<script>
+
+const yS=yearSel,
+mS=monthSel,
+cS=catSel,
+tb=tbody,
+th=thead;
+
+const currentYear = new Date().getFullYear();
+
+for(let y=currentYear-2; y<=currentYear+5; y++){
+
+    yS.innerHTML+=`<option value="${y}">${y}</option>`;
+}
+
+[
+"Jan","Feb","Mar","Apr","May","Jun",
+"Jul","Aug","Sep","Oct","Nov","Dec"
+].forEach((m,i)=>{
+
+    mS.innerHTML+=`<option value="${i}">${m}</option>`;
+});
+
+yS.value=currentYear;
+mS.value=new Date().getMonth();
+
+let attendance =
+JSON.parse(localStorage.getItem("attendance")||"{}");
+
+function key(y=yS.value,m=mS.value){
+
+    return `${y}-${m}-${cS.value}`;
+}
+
+function showLedgerPop(msg){
+
+    const pop=document.getElementById("ledger-pop");
+
+    pop.innerText=msg;
+
+    pop.style.display="block";
+
+    clearTimeout(window.popTimer);
+
+    window.popTimer=setTimeout(()=>{
+
+        pop.style.display="none";
+
+    },2000);
+}
+
+function employees(){
+
+    const all =
+    JSON.parse(localStorage.getItem("employees")||"[]");
+
+    const role =
+    localStorage.getItem("role");
+
+    const dept =
+    localStorage.getItem("department");
+
+    const search =
+    document.getElementById("search")
+    .value.toLowerCase();
+
+    let list =
+    all.filter(e=>e.category===cS.value);
+
+    if(role==="DEPARTMENT"){
+
+        list =
+        list.filter(e=>e.department===dept);
+    }
+
+    if(search){
+
+        list =
+        list.filter(e=>
+
+            e.id.toLowerCase().includes(search)
+            ||
+            e.name.toLowerCase().includes(search)
+        );
+    }
+
+    return list;
+}
+
+function globalAdjust(){
+
+    attendance[key()] ??= {};
+
+    const val = prompt(`Global Adjustment
+
+Examples:
+1
+-1
+2
+-2
+0.5
+-0.5`);
+
+    if(val===null || val==="") return;
+
+    const num = Number(val);
+
+    if(isNaN(num)){
+
+        alert("Invalid Number");
+
+        return;
+    }
+
+    attendance[key()].globalAdjustment = num;
+
+    saveS();
+
+    showLedgerPop(
+    `Global Adjustment ${num>0?'+':''}${num} Applied`
+    );
+
+    render();
+}
+
+function getRefDays(y,m){
+
+    let d=new Date(y,m,0),
+    arr=[];
+
+    while(d.getDay()!=6){
+
+        if(d.getDay()!=0){
+
+            arr.unshift(new Date(d));
+        }
+
+        d.setDate(d.getDate()-1);
+    }
+
+    return arr;
+}
+
+function render(){
+
+    const y=+yS.value;
+
+    const m=+mS.value;
+
+    const emps=employees();
+
+    const refs=getRefDays(y,m);
+
+    const days=
+    new Date(y,m+1,0).getDate();
+
+    attendance[key()] ??= {};
+
+    let head=`<tr>
+    <th>ID</th>
+    <th>Name</th>`;
+
+    refs.forEach(d=>{
+
+        head+=`
+        <th class="gray">
+
+        ${String(d.getDate()).padStart(2,'0')}
+
+        <br>
+
+        ${d.toLocaleDateString('en',{
+            month:'short',
+            weekday:'short'
+        })}
+
+        </th>`;
+    });
+
+    for(let i=1;i<=days;i++){
+
+        let d=new Date(y,m,i);
+
+        if(d.getDay()!=0){
+
+            head+=`
+            <th>
+
+            ${String(i).padStart(2,'0')}
+
+            <br>
+
+            ${d.toLocaleDateString('en',{
+                month:'short',
+                weekday:'short'
+            })}
+
+            </th>`;
+        }
+    }
+
+    head+=`
+    <th>Present Days</th>
+    <th>Adjustment</th>
+    <th>Total Days</th>
+    </tr>`;
+
+    th.innerHTML=head;
+
+    let rows="";
+
+    emps.forEach(emp=>{
+
+        attendance[key()][emp.id] ??= {};
+
+        let count=0;
+
+        let r=`
+        <tr onclick="selectRow(this)">
+        <td>${emp.id}</td>
+
+        <td style="text-align:left;padding-left:10px;">
+        ${emp.name}
+        </td>`;
+
+        // PREVIOUS MONTH REFS
+
+        refs.forEach(d=>{
+
+            let py=d.getFullYear();
+
+            let pm=d.getMonth();
+
+            let pd=d.getDate();
+
+            let prevMonthKey=
+            `${py}-${pm}-${cS.value}`;
+
+            let val=
+            attendance[prevMonthKey]?.[emp.id]?.[pd]?.val ?? "";
+
+            r+=`
+            <td class="gray">
+
+            <input class="att"
+            value="${val}"
+            readonly
+            tabindex="-1">
+
+            </td>`;
+        });
+
+        for(let i=1;i<=days;i++){
+
+            let d=new Date(y,m,i);
+
+            if(d.getDay()==0) continue;
+
+            const cell=
+            attendance[key()][emp.id][i] || {};
+
+            let cls="",label="",drop="";
+
+            // HOLIDAY
+
+            if(cell.holiday){
+
+                cls="royal-blue";
+
+                count++;
+            }
+
+            // PRESENT
+
+            else if(cell.val==1){
+
+                cls="green";
+
+                count++;
+            }
+
+            // HALF DAY
+
+            else if(cell.val===0.5){
+
+                cls="light-yellow";
+
+                let halfCount=0;
+
+                Object.keys(attendance[key()][emp.id])
+                .forEach(dd=>{
+
+                    if(attendance[key()][emp.id][dd]?.val===0.5){
+
+                        halfCount++;
+                    }
+                });
+
+                // ODD HALF = PRESENT
+
+                if(halfCount %2 !==0){
+
+                    count++;
+                }
+            }
+
+            // ABSENT / HALF PAIR
+
+            else if(cell.val===0){
+
+                let halfCount=0;
+
+                Object.keys(attendance[key()][emp.id])
+                .forEach(dd=>{
+
+                    if(attendance[key()][emp.id][dd]?.val===0.5){
+
+                        halfCount++;
+                    }
+                });
+
+                // HALF PAIR
+
+                if(halfCount >=2 && halfCount %2===0){
+
+                    cls="light-yellow";
+
+                    if(cell.leave==="Paid"){
+
+                        count++;
+                    }
+
+                    drop=`
+                    <select class="leave-opt"
+                    onchange="setLeave('${emp.id}',${i},this.value)">
+
+                    <option value="">0</option>
+
+                    <option value="Paid"
+                    ${cell.leave=="Paid"?"selected":""}>
+                    Paid
+                    </option>
+
+                    </select>`;
+                }
+
+                // NORMAL ABSENT
+
+                else{
+
+                    cls="red";
+
+                    if(d.getDay()!=6){
+
+                        drop=`
+                        <select class="leave-opt"
+                        onchange="setLeave('${emp.id}',${i},this.value)">
+
+                        <option></option>
+
+                        <option
+                        ${cell.leave=="Paid"?"selected":""}>
+                        Paid
+                        </option>
+
+                        <option
+                        ${cell.leave=="Unpaid"?"selected":""}>
+                        Unpaid
+                        </option>
+
+                        </select>`;
+                    }
+                }
+            }
+
+            if(cell.leave){
+
+                label=`
+                <span class="label-text">
+                ${cell.leave}
+                </span>`;
+            }
+
+            r+=`
+            <td class="${cls}">
+
+            <input
+            class="att"
+            value="${cell.val??""}"
+            oninput="setVal('${emp.id}',${i},this.value)">
+
+            ${label}
+
+            ${drop}
+
+            </td>`;
+        }
+
+        const adj =
+        attendance[key()].globalAdjustment || 0;
+
+        const finalTotal =
+        count + adj;
+
+        rows+=`
+        ${r}
+
+        <td>${count}</td>
+
+        <td style="color:#9333ea;font-weight:bold;">
+
+        ${adj>0?'+':''}${adj}
+
+        </td>
+
+        <td>
+        <b>${finalTotal}</b>
+        </td>
+
+        </tr>`;
+    });
+
+    tb.innerHTML=rows;
+}
+
+function setVal(id,day,v){
+
+    if(
+    v!=="" &&
+    v!=="0" &&
+    v!=="1" &&
+    v!=="0.5"
+    ){
+
+        event.target.value="";
+
+        return;
+    }
+
+    let num=(v==="")?null:Number(v);
+
+    attendance[key()][id][day]={val:num};
+
+    if(num===0.5){
+
+        showLedgerPop("0.5 Half Day Added");
+    }
+
+    calcSat(id);
+
+    saveS();
+
+    const activeIdx =
+    event.target.closest("td").cellIndex;
+
+    const activeRow =
+    event.target.closest("tr").rowIndex;
+
+    render();
+
+    // AUTO NEXT CELL
+
+    if(v!==""){
+
+        const nextCell =
+        tb.rows[activeRow-1]?.cells[activeIdx+1];
+
+        const nextInp =
+        nextCell?.querySelector(".att");
+
+        if(nextInp){
+
+            nextInp.focus();
+
+            nextInp.select();
+        }
+
+    }else{
+
+        const curCell =
+        tb.rows[activeRow-1]?.cells[activeIdx];
+
+        curCell?.querySelector(".att")?.focus();
+    }
+}
+
+function calcSat(id){
+
+    const y=+yS.value;
+
+    const m=+mS.value;
+
+    const days=
+    new Date(y,m+1,0).getDate();
+
+    const data=
+    attendance[key()][id];
+
+    let halfEntries = 0;
+
+    Object.keys(data).forEach(d=>{
+
+        if(data[d]?.val===0.5){
+
+            halfEntries++;
+        }
+    });
+
+    // HALF PAIR EXISTS
+
+    const halfPairExists =
+    halfEntries >=2 &&
+    halfEntries %2===0;
+
+    for(let i=1;i<=days;i++){
+
+        let d=new Date(y,m,i);
+
+        if(d.getDay()==6){
+
+            let ok=true;
+
+            for(let k=1;k<=5;k++){
+
+                let c=new Date(d);
+
+                c.setDate(d.getDate()-k);
+
+                let v;
+
+                if(c.getMonth()==m){
+
+                    v=data[c.getDate()]?.val;
+
+                }else{
+
+                    let prevMonthKey=
+                    `${c.getFullYear()}-${c.getMonth()}-${cS.value}`;
+
+                    v=
+                    attendance[prevMonthKey]?.[id]?.[c.getDate()]?.val;
+                }
+
+                if(v!=1 && v!=0.5){
+
+                    ok=false;
+
+                    break;
+                }
+            }
+
+            // HALF PAIR PROTECTS SATURDAY
+
+            if(!ok && !halfPairExists){
+
+                if(!data[i]?.holiday){
+
+                    data[i]={
+                        val:0,
+                        autoSat:true
+                    };
+
+                    showLedgerPop("Saturday Cut Applied");
+                }
+
+            }else{
+
+                data[i]={
+                    val:1,
+                    autoSat:true
+                };
+            }
+        }
+    }
+}
+
+function setLeave(id,day,v){
+
+    attendance[key()][id][day].leave=v;
+
+    // NORMAL ABSENT LOGIC
+
+    if(v=="Paid"){
+
+        attendance[key()][id][day].val=1;
+
+        showLedgerPop("Paid Leave Added");
+    }
+
+    else if(v=="Unpaid"){
+
+        attendance[key()][id][day].val=0;
+
+        showLedgerPop("Unpaid Leave Added");
+    }
+
+    else{
+
+        attendance[key()][id][day].val=0;
+    }
+
+    saveS();
+
+    render();
+}
+
+function applyHoliday(){
+
+    let d=
+    holidayInput.value.split(",").map(Number);
+
+    employees().forEach(e=>
+
+        d.forEach(day=>{
+
+            if(day){
+
+                attendance[key()][e.id][day]={
+                    val:1,
+                    holiday:true
+                };
+            }
+        })
+    );
+
+    saveS();
+
+    render();
+}
+
+function removeHoliday(){
+
+    let d=
+    holidayInput.value.split(",").map(Number);
+
+    employees().forEach(e=>
+
+        d.forEach(day=>{
+
+            if(attendance[key()][e.id][day]?.holiday){
+
+                delete attendance[key()][e.id][day];
+            }
+        })
+    );
+
+    saveS();
+
+    render();
+}
+
+// EXCEL NAVIGATION
+
+document.addEventListener("keydown",function(e){
+
+    const el=document.activeElement;
+
+    if(!el.classList.contains("att")) return;
+
+    const td=el.closest("td");
+
+    const tr=el.closest("tr");
+
+    const r=tr.rowIndex;
+
+    const c=td.cellIndex;
+
+    const move=(nr,nc)=>{
+
+        const target=
+        attTable.rows[nr]?.cells[nc]
+        ?.querySelector(".att");
+
+        if(target){
+
+            e.preventDefault();
+
+            target.focus();
+
+            target.select();
+        }
+    };
+
+    if(e.key==="ArrowRight" || e.key==="Tab")
+    move(r,c+1);
+
+    if(e.key==="ArrowLeft")
+    move(r,c-1);
+
+    if(e.key==="ArrowDown" || e.key==="Enter")
+    move(r+1,c);
+
+    if(e.key==="ArrowUp")
+    move(r-1,c);
+
+    if(e.key==="Backspace" && el.value==="")
+    move(r,c-1);
+});
+
+function selectRow(row){
+
+    document.querySelectorAll("tr")
+    .forEach(r=>r.classList.remove("selected-row"));
+
+    row.classList.add("selected-row");
+
+    selectedEmpId =
+    row.cells[0].innerText;
+}
+
+function saveS(){
+
+    localStorage.setItem(
+    "attendance",
+    JSON.stringify(attendance)
+    );
+}
+
+function save(){
+
+    saveS();
+
+    alert("Data Saved Successfully");
+}
+
+function downloadExcel(){
+
+    const table=
+    document.getElementById("attTable");
+
+    const clone=
+    table.cloneNode(true);
+
+    clone.querySelectorAll("input")
+    .forEach(inp=>{
+
+        const val=inp.value;
+
+        const text=
+        document.createTextNode(val);
+
+        inp.parentNode.replaceChild(text,inp);
+    });
+
+    const wb =
+    XLSX.utils.table_to_book(clone);
+
+    XLSX.writeFile(
+    wb,
+    `Attendance_${yS.value}_${parseInt(mS.value)+1}.xlsx`
+    );
+}
+
+yS.onchange=
+mS.onchange=
+cS.onchange=render;
+
+render();
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Dashboard</title>
+
+<style>
+body{
+ margin:0;
+ font-family:Segoe UI, sans-serif;
+ background:#f5f7fb;
+}
+
+/* HEADER */
+.header{
+ background:#4f46e5;
+ color:white;
+ padding:15px 20px;
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+}
+
+button{
+ padding:8px 14px;
+ border:none;
+ border-radius:6px;
+ cursor:pointer;
+}
+
+.logout{
+ background:#ef4444;
+ color:white;
+}
+
+/* GRID */
+.container{
+ padding:30px;
+ display:grid;
+ grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+ gap:20px;
+}
+
+/* CARD */
+.card{
+ background:white;
+ padding:25px;
+ border-radius:12px;
+ box-shadow:0 4px 10px rgba(0,0,0,0.1);
+ text-align:center;
+ cursor:pointer;
+ transition:0.2s;
+}
+
+.card:hover{
+ transform:translateY(-5px);
+}
+
+.card h3{
+ margin:10px 0;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="header">
+ <h2>HR Dashboard</h2>
+ <button class="logout" onclick="logout()">Logout</button>
+</div>
+
+<div class="container">
+
+<div class="card" id="empCard" onclick="go('employee.html')">
+ <h3>Employee</h3>
+ <p>Manage employees</p>
+</div>
+
+<div class="card" onclick="go('attendance.html')">
+ <h3>Attendance</h3>
+ <p>Mark attendance</p>
+</div>
+
+<div class="card" onclick="go('ledger.html')">
+ <h3>Ledger</h3>
+ <p>Leave tracking</p>
+</div>
+
+<div class="card" id="calcCard" onclick="go('calculation.html')">
+ <h3>Calculation</h3>
+ <p>Salary processing</p>
+</div>
+
+<!-- ✅ NEW DOCUMENT CARD -->
+<div class="card" id="docCard" onclick="go('documents.html')">
+ <h3>Documents</h3>
+ <p>Manage employee documents</p>
+</div>
+
+</div>
+
+<script>
+
+// ================= ROLE =================
+const role = localStorage.getItem("role");
+const dept = localStorage.getItem("department");
+
+if(!role){
+ location = "login.html";
+}
+
+// ================= UI RESTRICTION =================
+if(role === "DEPARTMENT"){
+
+ // hide admin-only pages
+ document.getElementById("empCard").style.display = "none";
+ document.getElementById("calcCard").style.display = "none";
+ document.getElementById("docCard").style.display = "none";
+
+}
+
+// ================= NAVIGATION =================
+function go(page){
+
+ // 🔐 BLOCK ACCESS
+ if(role === "DEPARTMENT"){
+   if(page === "employee.html" || page === "calculation.html" || page === "documents.html"){
+     alert("Only Admin can access this page");
+     return;
+   }
+ }
+
+ location = page;
+}
+
+// ================= LOGOUT =================
+function logout(){
+ localStorage.removeItem("role");
+ localStorage.removeItem("department");
+ location = "login.html";
+}
+
+</script>
+
+</body>
+</html>

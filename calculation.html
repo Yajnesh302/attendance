@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Calculation</title>
+
+<!-- LOCAL XLSX -->
+<script src="xlsx.full.min.js"></script>
+
+<style>
+body{font-family:Arial;background:#eef2f7;padding:20px;}
+.controls{background:#fff;padding:12px;margin-bottom:20px;border-radius:6px;}
+table{width:100%;border-collapse:collapse;background:#fff;}
+th{background:#2f5597;color:#fff;padding:8px;}
+td{border:1px solid #ddd;padding:6px;text-align:center;}
+button{padding:6px 12px;background:#2f5597;color:white;border:none;border-radius:4px;margin-right:5px;}
+.summary{margin-top:20px;background:#fff;padding:15px;}
+
+/* NAME LEFT ALIGN */
+.name-col{
+ text-align:left !important;
+ padding-left:10px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Calculation Page</h2>
+
+<div class="controls">
+<button onclick="location='attendance.html'">Back</button>
+
+Year:
+<select id="year"></select>
+
+Month:
+<select id="month"></select>
+
+Category:
+<select id="category">
+<option>Skilled</option>
+<option>Semi-Skilled</option>
+<option>Unskilled</option>
+</select>
+
+Wage:
+<input type="number" id="wage">
+
+<button onclick="saveWage()">Save Wage</button>
+<button onclick="render()">Load</button>
+</div>
+
+<div id="result"></div>
+
+<script>
+
+const year = document.getElementById("year");
+const month = document.getElementById("month");
+const category = document.getElementById("category");
+const wage = document.getElementById("wage");
+const result = document.getElementById("result");
+
+// INIT
+for(let y=2020;y<=2100;y++) year.innerHTML+=`<option>${y}</option>`;
+for(let i=0;i<12;i++) month.innerHTML+=`<option value="${i}">${i+1}</option>`;
+
+year.value=new Date().getFullYear();
+month.value=new Date().getMonth();
+
+function getKey(){
+ return `${year.value}-${month.value}-${category.value}`;
+}
+
+// WAGE
+function saveWage(){
+ if(!wage.value) return alert("Enter wage");
+ localStorage.setItem("wage-"+getKey(), wage.value);
+ alert("Saved");
+}
+
+function loadWage(){
+ const w = localStorage.getItem("wage-"+getKey());
+ if(w) wage.value = w;
+}
+
+// MAIN
+function render(){
+
+ loadWage();
+
+ const key = getKey();
+ const rate = Number(wage.value)||0;
+
+ let attendance = JSON.parse(localStorage.getItem("attendance")||"{}");
+ let employees = JSON.parse(localStorage.getItem("employees")||"[]");
+ let overrides = JSON.parse(localStorage.getItem("calculationOverrides")||"{}");
+
+ overrides[key]=overrides[key]||{};
+
+ const emps = employees.filter(e=>e.category===category.value);
+
+ if(!attendance[key]){
+   result.innerHTML="<h3>No Attendance Found</h3>";
+   return;
+ }
+
+ let totalDays=0,totalAmount=0;
+ let finalEmployees=[];
+ let dayCountMap={};
+
+ emps.forEach(emp=>{
+
+  let present = 0;
+  const empData = attendance[key][emp.id]||{};
+
+  for(let i=1;i<=31;i++){
+    const c = empData[i];
+    if(c){
+      if(c.val==1) present++;
+      else if(c.val==0.5) present+=0.5;
+    }
+  }
+
+  const adj = attendance[key].adjustments?.[emp.id] || 0;
+
+  let final = present + adj;
+
+  if(overrides[key][emp.id]!=null){
+    final = overrides[key][emp.id];
+  }
+
+  const amt = final * rate;
+
+  totalDays += final;
+  totalAmount += amt;
+
+  finalEmployees.push({
+    id:emp.id,
+    name:emp.name,
+    dept:emp.department,
+    present,
+    adj,
+    final,
+    amt
+  });
+
+  dayCountMap[final] = (dayCountMap[final] || 0) + 1;
+});
+
+ // ❌ NO SORTING (important fix)
+
+ // TABLE
+ let html=`<table>
+ <tr>
+ <th>ID</th><th>Name</th><th>Dept</th>
+ <th>Present</th><th>Adj</th><th>Final</th>
+ <th>Edit</th><th>Amount</th>
+ </tr>`;
+
+ finalEmployees.forEach(emp=>{
+  html+=`
+  <tr>
+   <td>${emp.id}</td>
+   <td class="name-col">${emp.name}</td>
+   <td>${emp.dept}</td>
+   <td>${emp.present}</td>
+   <td>${emp.adj}</td>
+   <td id="f-${emp.id}">${emp.final}</td>
+   <td><button onclick="edit('${emp.id}')">Edit</button></td>
+   <td>${emp.amt.toFixed(2)}</td>
+  </tr>`;
+ });
+
+ html+=`<tr style="background:#d9ead3;font-weight:bold;">
+ <td colspan="5">Total</td>
+ <td>${totalDays}</td>
+ <td></td>
+ <td>${totalAmount.toFixed(2)}</td>
+ </tr></table>`;
+
+ // DAYS VS EMPLOYEES
+ let dayBox = `<div class="summary"><b>Days vs Employees</b><br><br>`;
+ Object.keys(dayCountMap).sort((a,b)=>b-a).forEach(d=>{
+  dayBox += `${d} days = ${dayCountMap[d]} people<br>`;
+ });
+ dayBox += `
+ <br>
+ <button onclick="exportSummary()">Export Summary Excel</button>
+ <button onclick="exportFull()">Export Full Excel</button>
+ </div>`;
+
+ html += dayBox;
+
+ // SUMMARY
+ html+=`
+ <div class="summary">
+ Subtotal: ${totalAmount.toFixed(2)}<br>
+ Service: ${(totalAmount*0.0385).toFixed(2)}<br>
+ GST: ${(totalAmount*0.18).toFixed(2)}<br>
+ <b>Total: ${(totalAmount*1.2185).toFixed(2)}</b><br><br>
+
+ <button onclick="genCertificate()">Generate Certificate</button>
+ <button onclick="genInvoice()">Generate Invoice</button>
+ </div>`;
+
+ result.innerHTML=html;
+
+ localStorage.setItem("finalData", JSON.stringify({
+  employees: finalEmployees,
+  rate: rate,
+  category: category.value,
+  year: year.value,
+  month: month.value
+ }));
+}
+
+// EXPORT SUMMARY
+function exportSummary(){
+ const key = getKey();
+ let attendance = JSON.parse(localStorage.getItem("attendance")||"{}");
+ let employees = JSON.parse(localStorage.getItem("employees")||"[]");
+
+ let data = [];
+
+ employees.filter(e=>e.category===category.value).forEach(emp=>{
+  let present = 0;
+  const empData = attendance[key][emp.id]||{};
+  for(let i=1;i<=31;i++){
+    const c = empData[i];
+    if(c){
+      if(c.val==1) present++;
+      else if(c.val==0.5) present+=0.5;
+    }
+  }
+  data.push({ID: emp.id, Name: emp.name, Present: present});
+ });
+
+ const ws = XLSX.utils.json_to_sheet(data);
+ const wb = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb, ws, "Summary");
+ XLSX.writeFile(wb, "Summary.xlsx");
+}
+
+// EXPORT FULL
+function exportFull(){
+
+ const key = getKey();
+
+ let attendance = JSON.parse(localStorage.getItem("attendance")||"{}");
+ let employees = JSON.parse(localStorage.getItem("employees")||"[]");
+ let overrides = JSON.parse(localStorage.getItem("calculationOverrides")||"{}");
+
+ overrides[key] = overrides[key] || {};
+ const rate = Number(wage.value)||0;
+
+ let data = [];
+
+ employees.filter(e=>e.category===category.value).forEach(emp=>{
+
+  let present = 0;
+  const empData = attendance[key][emp.id]||{};
+
+  for(let i=1;i<=31;i++){
+    const c = empData[i];
+    if(c){
+      if(c.val==1) present++;
+      else if(c.val==0.5) present+=0.5;
+    }
+  }
+
+  const adj = attendance[key].adjustments?.[emp.id] || 0;
+
+  let final = present + adj;
+
+  if(overrides[key][emp.id]!=null){
+    final = overrides[key][emp.id];
+  }
+
+  const amt = final * rate;
+
+  data.push({
+    ID: emp.id,
+    Name: emp.name,
+    Department: emp.department,
+    Present: present,
+    Adjustment: adj,
+    Final: final,
+    Amount: amt.toFixed(2)
+  });
+
+ });
+
+ // ❌ NO SORT HERE ALSO
+
+ const ws = XLSX.utils.json_to_sheet(data);
+ const wb = XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb, ws, "Full Report");
+
+ XLSX.writeFile(wb, "Full_Report.xlsx");
+}
+
+// EDIT
+function edit(id){
+ const key=getKey();
+ let overrides=JSON.parse(localStorage.getItem("calculationOverrides")||"{}");
+ overrides[key]=overrides[key]||{};
+ const val=prompt("Enter days:");
+ if(val===null) return;
+ overrides[key][id]=Number(val);
+ localStorage.setItem("calculationOverrides",JSON.stringify(overrides));
+ render();
+}
+
+// NAV
+function genInvoice(){ window.open("invoice.html","_blank"); }
+function genCertificate(){ window.open("certificate.html","_blank"); }
+
+year.onchange=month.onchange=category.onchange=render;
+
+render();
+
+</script>
+</body>
+</html>
